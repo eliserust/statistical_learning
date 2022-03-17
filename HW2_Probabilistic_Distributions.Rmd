@@ -1,0 +1,414 @@
+---
+title: "Homework#2"
+author: "Elise Rust"
+date: "9/22/2021"
+output: html_document
+---
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+  font-family: "Times New Roman", Times, serif;
+}
+</style>
+
+Set seed and load in necessary packages
+```{r}
+set.seed(225)
+
+library(tidyverse)
+library(ggplot2)
+library(stats)
+library(nortest)
+```
+
+# Problem #1:
+Demonstrate that these two commands indeed give the same result for 5 diff values of p (use table function)
+
+Initializing myattempts(p) function and rgeom(1,p).
+```{r}
+## Random variable defined by counting the number of failures until the first succcess
+
+# myattempts(p)
+mytoss = function(p){
+  u <- runif(1)
+  x <- as.numeric(u < p)
+  return(x)
+}
+
+myattempts = function(p) { counter <- 0
+while (mytoss(p) == 0) { counter <- counter + 1 }
+return(counter) }
+```
+### I answered parts b - e.
+
+b. For the second p, compare distribution by computing statistics such as mean and standard deviation
+```{r}
+p = 0.28
+
+method1 = replicate(100000, myattempts(p))
+method2 = replicate(100000, rgeom(1,p))
+
+# compute statistics for each
+summary_stats1 <- summary(method1)
+summary_stats2 <- summary(method2)
+
+# Compute standard deviation for each
+standard_dev1 <- sd(method1)
+standard_dev2 <- sd(method2)
+
+# Print
+cat("The mean of the random variable defined by myattempt(0.28) is: ", summary_stats1[4], ", its median is: ", summary_stats1[3], ", its maximum is: ", summary_stats1[6], ", and its standard deviation is: ", standard_dev1, ".")
+cat("The mean of the random variable defined by rgeom(1,0.28) is: ", summary_stats2[4], ", its median is: ", summary_stats2[3], ", its maximum is: ", summary_stats2[6], ", and its standard deviation is: ", standard_dev2, ".")
+```
+
+c. For the third p, plot both the distributions as histograms in the same plot
+```{r}
+p = 0.55
+
+method1 = replicate(100000, myattempts(p))
+method2 = replicate(100000, rgeom(1,p))
+
+# convert into dataframes in order to plot
+df1 <- as.data.frame(method1)
+df2 <- as.data.frame(method2)
+
+# plot both the distributions as histograms on the same plot
+ggplot(df1, aes(x=method1)) + 
+  geom_histogram(bindwidth = 1, alpha=0.5, fill = "pink") +
+  geom_histogram(data = df2, aes(x = method2, bindwidth = 1, alpha = 0.5, fill = "white")) +
+  labs(title = "Comparative histograms of distributions of myattempts() and rgeom()")
+```
+
+d. For the fourth p, make side-by-side box plots
+```{r}
+p = 0.91
+
+method1 = replicate(100000, myattempts(p))
+method2 = replicate(100000, rgeom(1,p))
+
+# convert into dataframes in order to plot
+df1 <- as.data.frame(method1)
+df2 <- as.data.frame(method2)
+
+head(df1)
+head(df2)
+
+# combine dataframes and gather them
+df_big = cbind(df1, df2)
+df_big <- gather(df_big, "type", "value", 1:2)
+
+head(df_big)
+
+# plot side-by-side box plots
+ggplot(df_big, aes(x= type, y= value, fill=type)) +
+  geom_boxplot() +
+  theme_classic()
+```
+
+e. For the fifth p, plot the two empirical distribution functions in the same plot.
+```{r}
+p = 0.63
+
+method1 = replicate(100000, myattempts(p))
+method2 = replicate(100000, rgeom(1,p))
+
+# plot two empirical distribution functions in the same plot
+require(graphics)
+plot(ecdf(method1), verticals = TRUE, do.points = FALSE, col = 'green')
+plot(ecdf(method2), verticals = TRUE, do.points = FALSE, add = TRUE, col = 'orange')
+```
+
+# Problem #2:
+
+```{r}
+# Draw a uniformly distributed random number X1 from the interval (0,1)
+number_generator <- function() {
+  X1 = runif(1, min = 0, max = 1)
+  X2 = runif(1, min = 0, max = 1 + X1)
+  X3 = runif(1, min = 0, max = 1 + X2)
+  X4 = runif(1, min = 0, max = 1 + X3)
+  X5 = runif(1, min = 0, max = 1 + X4)
+  X6 = runif(1, min = 0, max = 1 + X5)
+  X7 = runif(1, min = 0, max = 1 + X6)
+  X8 = runif(1, min = 0, max = 1 + X7)
+  X9 = runif(1, min = 0, max = 1 + X8)
+  X10 = runif(1, min = 0, max = 1 + X9)
+  
+  return(X10)
+}
+
+# Use a monte carlo simulation to give an approximate answer to: What is the mean value of X10?
+# Run 10,000 times
+runs <- 10000
+simulations <- replicate(runs, number_generator())
+
+mean_X10 <- print(mean(simulations))
+cat("Using a Monte Carlo Simulation that runs 10,000 times we find that the mean value of X10 is: ", mean_X10)
+
+# Use a histogram to identify the distribution of X10
+hist(simulations, freq = TRUE, col = "pink", main = "Histogram of the distribution of X10 after 10,000 simulations.", 
+     xlab = "Value of X10", ylab = "Frequency")
+
+```
+
+# Problem #3: X has a gamma distribution with shape parameter r = 2.5 and scale parameter p = 5.
+
+a. Prob(X <= 10)
+```{r}
+shape = 2.5
+scale = 5
+x = 10
+
+# Use gamma distribution --> cumulative distribution for X <= 10
+prob1 = pgamma(x, shape, scale, lower.tail = TRUE)
+cat("The probability that random variable X - which is distributed via the Gamma distribution - is less than or equal to 10 equals: " , prob1)
+```
+b. Prob(X > 5)
+```{r}
+# Prob(X > 5) = 1 - Prob(X <= 4)
+shape = 2.5
+scale = 5
+x = 4
+
+# Use gamma distribution --> cumulative distribution for 1 - X <= 4
+prob1 = pgamma(x, shape, scale, lower.tail = FALSE)
+cat("The probability that random variable X - which is distributed via the Gamma distribution - is greater than 5 equals: " , prob1)
+```
+
+c. Prob(|X - 8| < 1)
+(|X - 8|) = 7 < X < 9
+```{r}
+shape = 2.5
+scale = 5
+x1 = 9
+x2 = 8
+# P(X < 9) & P(X > 7) = P(X < 9) - (1 - P(X < 8))
+
+# Use gamma distribution
+prob1 = pgamma(x1, shape, scale) - (1 - pgamma(x2, shape, scale))
+cat("The probability that random variable X - which is distributed via the Gamma distribution - is between 7 and 9 equals: " , prob1)
+```
+
+d. z such that Prob(X < z) = 0.95
+```{r}
+# Use quantile distribution
+p <- 0.95
+
+z = qgamma(p, shape, scale)
+
+cat("Value z such that P(X < z) = 0.95 is: ", z)
+
+# Double check that it worked
+#pgamma(1.10705, shape, scale)
+```
+
+
+# Problem #4:
+Is binomial distribution B(n,p) close to that of a normal distribution?
+
+Plot cumulative distribution functions in the same figure using a staircase plot for binomial and a line plot for normal
+a. Case 1: np and n(1-p) are large
+```{r}
+x = 0:200
+n = 200
+p = 0.9
+mean = mean(x)
+sd = sd(x)
+
+binomial <- pbinom(x, size = n, prob = p)
+normal <- pnorm(x, mean, sd)
+
+plot(x, binomial, type = "S")
+plot(x, normal, type = "l")
+```
+
+The binomial distribution is steeper and skewed more right than the normal distribution. The normal distribution's cdf is a smooth upward sloping line between 0 and 0.8 while the binomial distribution's cdf is a constant line until around 175 where it sky rockets up to 1. However, relative to the other two cases it resembles a normal distribution far more.
+
+b. np is large and n(1-p) < 10
+```{r}
+x = 0:15
+n = 15
+p = 0.8 
+# np = 12, n(1-p) = 3
+mean = mean(x)
+sd = sd(x)
+
+binomial <- pbinom(x, size = n, prob = p)
+normal <- pnorm(x, mean, sd)
+
+plot(x, binomial, type = "S")
+plot(x, normal, type = "l")
+```
+
+In this case the binomial staircase plot is less smooth and resembles a normal distribution less. The smaller n means the plot is less normalized and increments in larger chunks.
+
+c. np < 10 and n(1 − p) < 10
+```{r}
+x = 0:10
+n = 10
+p = 0.8 
+# np = 8, n(1-p) = 2
+mean = mean(x)
+sd = sd(x)
+
+binomial <- pbinom(x, size = n, prob = p)
+normal <- pnorm(x, mean, sd)
+
+plot(x, binomial, type = "S")
+plot(x, normal, type = "l")
+```
+
+This plot is similar to plot 2, but the effect is worsened as n is again even smaller. Here, neither np nor n(1-p) are greater than 10 so it resembles a normal distribution the least.
+
+# Problem #5:
+```{r}
+# sample size of 10
+sample10 <- rnorm(10)
+qqnorm(sample10)
+```
+
+Sample size 10: The plot is the farthest from a straight line of the group. Though it slightly resembles a straight line, with this few samples it is hard to tell accurately whether the sample comes from a normal distribution.
+
+```{r}
+# sample size of 20
+sample20 <- rnorm(20)
+qqnorm(sample20)
+```
+
+Sample size 20: With more samples (i.e. more points on the graph) this plot begins to resemble a straight line more. We can begin to see that this sample is likely normally distributed.
+
+```{r}
+# sample size of 40
+sample40 <- rnorm(40)
+qqnorm(sample40)
+```
+
+Sample size 40: This sample is even more normally distributed as it more closely resembles a straight line than the previous two. Between the -1 and 1 theoretical quantiles is where the line is the straighest whereas as the plot gets farther from 0 it is more scattered.
+
+```{r}
+# sample size of 100
+sample100 <- rnorm(100)
+qqnorm(sample100)
+```
+
+Sample size 100: This sample continues the trend and again resembles a straight line more than the previous three plots did. With this number of values it is pretty clear that the sample is normally distributed and most closely resembles a straight line between the -1 and 1 theoretical quantiles.
+
+```{r}
+# sample size of 400
+sample400 <- rnorm(400)
+qqnorm(sample400)
+```
+
+Sample size 400: Finally, with a sample size of 400 values the sample clearly has an approximate normal distribution. This time, more of the plot resembles a straight line (i.e. from the -2 to 2 theoretical quantiles) and the scattering at the tails is tighter.
+
+
+#Problem #6:
+
+a. Simulation #1 --> Standard Normal Distribution
+```{r}
+### X has a continuous distribution
+### f(x) = pdf
+### F(X) = cdf --> cumulative distribution function
+### U = F(X) has a uniform U(0,1) distribution
+
+# Generate random sample - normally distributed
+X = rnorm(100)
+
+# plugging it into cdf
+CDF_F= ecdf(X)
+
+# sort data
+U = CDF_F(sort(X))
+
+# plot U
+plot(U, main = "Distribution of U = F(X) of normally distributed random variable X")
+
+# Check with Kolmogorov-Smirnov Test
+ks.test(U, "punif")
+
+#################
+# Alternative code I was working with that may also be correct:
+# X = rnorm(100)
+#U = pnorm(X, mean = 0, sd = 1)
+#y = seq(-10, 9.8, by = 0.2)
+#plot(y, U,  type = "l", main = "CDF of the Normal Distribution")
+```
+
+b. Simulation #2 --> Exponential Distribution
+```{r}
+# Generate ranom varible - Exponentially distributed
+X = rexp(100)
+
+# plugging it into cdf F
+CDF_F = ecdf(X)
+
+# sort data
+U = CDF_F(sort(X))
+
+# plot U
+plot(U, main = "Distribution of U = F(X) of exponentially distributed random variable X")
+
+
+## Again, the alternative I was playing with that uses pexp instead
+#X = rexp(100)
+# U = pexp(X)
+# y = seq(0,99, by = 1)
+#plot(X, U,  main = "CDF of the Exponential Distribution")
+```
+
+c. Simulation #3 --> Gamma Distribution
+```{r}
+# Generate ranom varible - Gamma distributed
+X = rgamma(100, shape = 2.5, scale = 5)
+
+# plugging it into cdf F
+CDF_F = ecdf(X)
+
+# sort data
+U = CDF_F(sort(X))
+
+# plot U
+plot(U, main = "Distribution of U = F(X) of Gamma distributed random variable X")
+
+
+## Again, the alternative solution I was playing with
+#X = rgamma(100, shape = 2.5, scale = 5)
+# U = pgamma(X, shape = 2.5, scale = 5)
+# y = seq(from = 0, to = 99, by = 1)
+# plot(x, U,  main = "CDF of the Gamma Distribution")
+```
+
+# Bonus Problem:
+```{r}
+# Generate X1 and X2
+N = 10000
+X1 = rexp(N)
+X2 = rexp(N)
+
+# Sum X1 and X2
+X = X1 + X2
+
+# Use qqnorm plots to determine an appropriate value of alpha
+plot(qqnorm(X))
+
+# Now use a loop to test for alphas that would make a normally distributed X^a
+suitable = FALSE
+i = 1
+
+while (suitable == FALSE) {
+  test_X = X^i
+  # Run Adnerson test
+  result = ad.test(rnorm(test_X))
+  
+  if (result [2] > 0.05) {
+    suitable = TRUE
+    print("An approximate value for alpha is: ")
+    print(i)
+  }
+  else {
+    i = i + 1
+  }
+}
+
+```

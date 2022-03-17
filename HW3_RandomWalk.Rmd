@@ -1,0 +1,181 @@
+---
+title: "HW3_Rust"
+author: "Elise Rust"
+date: "10/12/2021"
+output: html_document
+---
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+  font-family: "Times New Roman", Times, serif;
+}
+</style>
+
+Load in Libraries
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+# Problem #1: True or False - Random Walk
+
+False. The transition matrix is not symmetric because some tiles have more subsequent tiles to move to whereas others (along the corners and edges) have fewer tile choices for the next move. For example, if moving from tile 1 on X1 to tile 2 on X2, $P(X_{i+1} = 2| X_i = 1)$ = 0.5 because one can only move to to two tiles from tile 1. However, if moving from tile 2 to tile 1, $P(X_{i+1} = 1|X_i = 2)$ = 0.33. Therefore, these probabilities do not equal each other and the transition matrix is not symmetric.
+
+
+# Problem #2
+```{r}
+size = 10000
+
+X = rbinom(size, 80, 0.2)
+Y = rbinom(size, 100, 0.7)
+
+Z = X + Y
+```
+
+a) P(X < 12|X < 18) and E(X|X < 18)
+```{r}
+sub_18 <- X[X < 18]
+
+# P(X < 12 | X < 18)
+sub_12 <- sub_18[sub_18 < 12]
+prob1 = length(sub_12) / length(sub_18)
+
+cat("The conditional probability of X (from binomial distribution B(80, .2)) less than 12 given X < 18 is: ", prob1)
+
+# E(X } X < 18)
+cat("The expected value of X|X<18 is: ", mean(sub_18))
+```
+
+b) Cumulative distribution function of X|(12 <= X <= 20)
+```{r}
+subset2 <- between(X, 12, 20)
+Xecdf <- ecdf(subset2)
+t <- seq(0, 2, by = 0.1)
+plot(t, Xecdf(t), type = "l", lwd = 2)
+```
+
+c) Cumulative distribution function of X|Z = 90
+```{r}
+Z90 = Z[Z == 90]
+
+Xecdf <- ecdf(Z90)
+t <- seq(0, 2, by = 0.1)
+plot(t, Xecdf(t), type = "l", lwd = 2)
+```
+
+
+d) E(Z|X=k)fork=10,15,20
+```{r}
+EV10 = mean(Z[X == 10])
+EV15 = mean(Z[X == 15])
+EV20 = mean(Z[X == 20])
+
+cat("The expectation of variable Z given an X value of 10 is: ", EV10)
+cat("The expectation of variable Z given an X value of 15 is: ", EV15)
+cat("The expectation of variable Z given an X value of 20 is: ", EV20)
+```
+
+e) E(X|Z = k) for k = 80,90,100
+```{r}
+EV80 = mean(X[Z == 80])
+EV90 = mean(X[Z == 90])
+EV100 = mean(X[Z == 100])
+
+cat("The expectation of variable Z given an X value of 10 is: ", EV10)
+cat("The expectation of variable Z given an X value of 15 is: ", EV15)
+cat("The expectation of variable Z given an X value of 20 is: ", EV20)
+```
+
+
+
+# Problem #3: 
+```{r}
+# Initialize X and Y
+lambda = 1
+N = 10000
+
+df3 = as.data.frame(rexp(10000, lambda)) # Calculate X
+names(df3) <- c("X") # rename column
+
+df3 <- df3 %>%
+  mutate(Y = rpois(10000, X)) # Calculate Y
+```
+
+a) Generate at least 1000 random samples from the marginal distribution of X and make a probability histogram.
+```{r}
+samples = 1000
+
+hist(replicate(1000, df3$X), prob = T)
+```
+
+b) Generate at least 1000 random samples from the conditional distribution of Y |X = 1.5 and make a probability histogram.
+```{r}
+#df3$Y[df$X == 1.5] # No results, X never equals 1.5
+
+## Use round function
+df3$rounded_x <- round(df3$X, digits = 2) # round X to 2 digits
+head(df3) # view results
+
+hist(replicate(1000, df3$Y[df3$rounded_x == 1.5]), prob = T)
+```
+
+c) Generate at least 1000 random samples from the marginal distribution of Y and make a probability histogram.
+```{r}
+hist(replicate(1000, df3$Y), prob = T)
+```
+
+d) Generate at least 1000 random samples from the conditional distribution of X|Y = 2 and make a probability histogram.
+```{r}
+
+hist(replicate(1000, df3$X[df3$Y == 2]), prob = T)
+```
+
+
+# Problem #4: 
+Suppose X and Y have independent standard normal distributions. Make at least 1,000 random samples from Z, defined as Z = Y |(X + Y ≥ 1). Do you think that Z has a normal distribution? What are its approximate mean and standard deviation?
+```{r}
+X = rnorm(1000, 0, 1)
+Y = rnorm(1000, 0, 1)
+
+Z = Y[X + Y >= 1]
+
+plot(ecdf(Z))
+
+mean(Z)
+sd(Z)
+```
+Based on the above results, the ecdf of Z does resemble the known ecdf of a normal distribution while the mean is around 1. The standard deviation is 0.7739997 though, so this is not a standard normal distribution. It is however largely resembling a normal distribution.
+
+# Problem #5: 
+
+1) Written response on attached PDF
+
+4) Generate a sample of size 10,000 from Y1 ∼ N(−2,1), Y2 ∼ N(2,2), w1 = 1/3, w2 = 2/3 and make a
+probability histogram. Clearly this is not a normal distribution, and a mixture is not a sum!
+```{r}
+N = 10000
+Y1 = rnorm(N, -2, 1)
+Y2 = rnorm(N, 2, 2)
+
+w1 = 1/3
+w2 = 2/3
+
+X = as.array(sample (c(1,2), size=10000, replace =T)) # define X
+
+# Create a dataframe
+Y1 = as.array(Y1)
+Y2 = as.array(Y2)
+df4 = as.data.frame(cbind(Y1, Y2, X))
+
+# Create variable Y
+df4 <- df4 %>%
+  mutate(Y = case_when(
+    X == 1 ~ Y1,
+    X == 2 ~ Y2
+  ))
+
+# Plot the mixture of Y
+hist(df3$Y, prob = T)
+```
+Definitely not a normal distribution!
